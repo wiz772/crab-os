@@ -20,11 +20,14 @@ if /I "%confirm%" NEQ "y" (
 echo [CMD] Overriding to rust nightly
 rustup override set nightly
 
+echo [CMD] Adding rust-src component
+rustup component add rust-src --toolchain nightly
+
 echo [CMD] Installation of bootimage...
 cargo install bootimage
 
 echo [CMD] Adding llvms components...
-rustup component add llvm-tools-preview
+rustup component add llvm-tools-previe
 
 echo [CMD] Building the cargo project...
 cargo build

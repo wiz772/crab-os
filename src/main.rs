@@ -14,7 +14,6 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[unsafe(no_mangle)]
 pub extern "C"  fn _start() -> ! {
-    vga_buffer::at_sign_filler();
-
+    vga_buffer::print_something("Gougou and gaga");
     loop{}
 }

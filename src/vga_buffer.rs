@@ -1,3 +1,5 @@
+use core::fmt;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -36,7 +38,7 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
-const BUFFER_HEIGHT: usize = 25;_
+const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH : usize = 80;
 
 #[repr(transparent)]
@@ -49,6 +51,12 @@ pub struct Writer{
     color_code: ColorCode,
     buffer: &'static mut Buffer
 }
+
+pub static WRITER: Writer = Writer {
+    column_position: 0,
+    color_code: ColorCode::new(Color::Black, Color::White),
+    buffer: unsafe {&mut *(0xb8000 as *mut Buffer)},
+};
 
 impl Writer{
     pub fn write_byte(&mut self, byte: u8){
@@ -114,6 +122,15 @@ impl Writer{
 
 }
 
+impl fmt::Write for Writer{
+
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
+
+}
+
 pub fn at_sign_filler(){
     let mut writer = Writer {
         column_position: 0,
@@ -121,5 +138,19 @@ pub fn at_sign_filler(){
         buffer: unsafe {&mut *(0xb8000 as *mut Buffer)}
     };
 
-    writer.fill_with_char(b'@');
+    writer.fill_with_char(b'w');
 }
+
+pub fn print_something(s: &str){
+    use core::fmt::Write;
+    let mut writer = Writer{
+        column_position: 0,
+        color_code: ColorCode::new(Color::Black, Color::White),
+        buffer: unsafe {&mut *(0xb8000 as *mut Buffer)}
+
+    };
+    write!(writer, "{}", s).unwrap();
+    
+}
+
+

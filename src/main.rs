@@ -10,7 +10,7 @@ fn panic(_info: &PanicInfo) -> ! {
     let all_char_bytes: &[u8; 29] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#";
     {
         for byte in all_char_bytes {
-            let mut writer = crate::vga_buffer::WRITER.lock();
+            let mut writer: spin::MutexGuard<'_, vga_buffer::Writer> = crate::vga_buffer::WRITER.lock();
 
             for _ in 0..5 {
                 writer.fill_with_char(*byte);
@@ -23,7 +23,10 @@ fn panic(_info: &PanicInfo) -> ! {
             }
         }
     }
-    crate::vga_buffer::WRITER.lock().clear_screen();
+    {    
+        let mut writer: spin::MutexGuard<'_, vga_buffer::Writer> = crate::vga_buffer::WRITER.lock();
+        writer.clear_screen();
+    }
     println!("[PANIC] {}", _info);
     loop {}
 }

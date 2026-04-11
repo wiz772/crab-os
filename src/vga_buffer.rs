@@ -1,4 +1,6 @@
 use core::fmt;
+use lazy_static::lazy_static;
+use spin::Mutex;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,11 +54,13 @@ pub struct Writer{
     buffer: &'static mut Buffer
 }
 
-pub static WRITER: Writer = Writer {
-    column_position: 0,
-    color_code: ColorCode::new(Color::Black, Color::White),
-    buffer: unsafe {&mut *(0xb8000 as *mut Buffer)},
-};
+lazy_static! {
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
+        column_position: 0,
+        color_code: ColorCode::new(Color::Yellow, Color::Black),
+        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+    });
+}
 
 impl Writer{
     pub fn write_byte(&mut self, byte: u8){
@@ -96,6 +100,12 @@ impl Writer{
         let blank_character = ScreenChar{ascii_character: b' ', color_code};
         for row in 0..BUFFER_HEIGHT {
             self.buffer.chars[row][column] = blank_character;
+        }
+    }
+
+    pub fn clear_screen(&mut self){
+        for row in 0..BUFFER_HEIGHT {
+                self.clear_row(row);
         }
     }
 
@@ -141,16 +151,24 @@ pub fn at_sign_filler(){
     writer.fill_with_char(b'w');
 }
 
-pub fn print_something(s: &str){
-    use core::fmt::Write;
-    let mut writer = Writer{
-        column_position: 0,
-        color_code: ColorCode::new(Color::Black, Color::White),
-        buffer: unsafe {&mut *(0xb8000 as *mut Buffer)}
-
-    };
-    write!(writer, "{}", s).unwrap();
-    
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
 }
 
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
 
+#[doc(hidden)]
+pub fn _print(msg: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(msg).unwrap();
+}
+
+#[macro_export]
+macro_rules! screen_fill{
+    ($c:expr) => ($crate::vga_buffer::WRITER.lock().fill_with_char($c as u8));
+}
